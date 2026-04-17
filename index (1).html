@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokemon News</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family: Arial, sans-serif;
+      background:#f4f7fb;
+      color:#222;
+    }
+    .topbar{
+      height:56px;
+      background:#0d47a1;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 12px;
+      position:sticky;
+      top:0;
+      z-index:1000;
+    }
+    .topbar .left-area,.topbar .right-area{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .icon-btn{
+      background:none;
+      border:none;
+      color:#fff;
+      font-size:22px;
+      cursor:pointer;
+    }
+    .brand{
+      font-size:20px;
+      font-weight:bold;
+    }
+
+    .sidebar{
+      position:fixed;
+      top:0;
+      left:-280px;
+      width:260px;
+      height:100%;
+      background:#fff;
+      box-shadow:2px 0 15px rgba(0,0,0,0.15);
+      z-index:1200;
+      transition:0.3s;
+      padding:16px;
+      overflow-y:auto;
+    }
+    .sidebar.open{ left:0; }
+    .sidebar h2{
+      color:#0d47a1;
+      margin-bottom:16px;
+    }
+    .sidebar a, .sidebar button.side-btn{
+      display:block;
+      width:100%;
+      text-align:left;
+      padding:12px;
+      margin-bottom:10px;
+      text-decoration:none;
+      color:#222;
+      background:#f1f5f9;
+      border:none;
+      border-radius:8px;
+      font-size:15px;
+      cursor:pointer;
+    }
+    .sidebar .contact-box{
+      margin-top:16px;
+      background:#e3f2fd;
+      padding:12px;
+      border-radius:10px;
+    }
+    .sidebar .contact-box p{
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.35);
+      display:none;
+      z-index:1100;
+    }
+    .overlay.show{ display:block; }
+
+    .menu-dropdown{
+      position:absolute;
+      right:12px;
+      top:58px;
+      width:210px;
+      background:#fff;
+      border-radius:10px;
+      box-shadow:0 5px 18px rgba(0,0,0,0.15);
+      display:none;
+      z-index:1300;
+      overflow:hidden;
+    }
+    .menu-dropdown.show{ display:block; }
+    .menu-dropdown button{
+      width:100%;
+      border:none;
+      background:#fff;
+      padding:12px;
+      text-align:left;
+      cursor:pointer;
+      border-bottom:1px solid #eee;
+      font-size:14px;
+    }
+    .menu-dropdown button:last-child{ border-bottom:none; }
+
+    .container{
+      max-width:960px;
+      margin:18px auto;
+      padding:0 12px 40px;
+    }
+    .card{
+      background:#fff;
+      border-radius:14px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+      padding:16px;
+      margin-bottom:18px;
+    }
+    .hidden{ display:none !important; }
+    .mode-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      margin-bottom:10px;
+    }
+    .admin-mode{ background:#fff3cd; color:#8a5300; }
+    .user-mode{ background:#e3f2fd; color:#0d47a1; }
+    .guest-mode{ background:#eceff1; color:#455a64; }
+
+    input, textarea, select{
+      width:100%;
+      padding:12px;
+      margin-top:8px;
+      margin-bottom:14px;
+      border:1px solid #cfd8dc;
+      border-radius:8px;
+      font-size:15px;
+    }
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+    button.main-btn{
+      border:none;
+      background:#0d47a1;
+      color:#fff;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:14px;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    button.red{ background:#c62828; }
+    button.gray{ background:#546e7a; }
+    button.green{ background:#2e7d32; }
+    button:disabled{ opacity:0.6; cursor:not-allowed; }
+
+    .status{
+      font-size:14px;
+      color:#1565c0;
+      margin-top:8px;
+    }
+
+    .feed{
+      display:grid;
+      gap:16px;
+    }
+    .post{
+      background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    }
+    .post-media img,.post-media video{
+      width:100%;
+      display:block;
+      max-height:420px;
+      object-fit:cover;
+      background:#dde7f2;
+    }
+    .post-body{
+      padding:14px;
+    }
+    .post-type{
+      display:inline-block;
+      background:#e3f2fd;
+      color:#0d47a1;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      margin-bottom:10px;
+    }
+    .post-title{
+      font-size:22px;
+      font-weight:bold;
+      color:#0d47a1;
+      margin-bottom:8px;
+    }
+    .post-text{
+      line-height:1.6;
+      white-space:pre-wrap;
+      margin-bottom:10px;
+    }
+    .meta{
+      font-size:13px;
+      color:#607d8b;
+    }
+    .post-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .empty{
+      background:#fff;
+      padding:24px;
+      text-align:center;
+      color:#607d8b;
+      border-radius:14px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="left-area">
+      <button class="icon-btn" id="menuBtn">&#9776;</button>
+      <div class="brand">Pokemon News</div>
+    </div>
+    <div class="right-area">
+      <button class="icon-btn" id="threeDotBtn">&#8942;</button>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <h2>Menu</h2>
+    <a href="#home">Home</a>
+    <a href="#feedSection">News Feed</a>
+    <button class="side-btn" id="sideLoginBtn">Login with Google</button>
+    <button class="side-btn hidden" id="sideLogoutBtn">Logout</button>
+
+    <div class="contact-box">
+      <h3 style="margin-bottom:10px;">Contact Info</h3>
+      <p><strong>WhatsApp:</strong> 7617041952</p>
+      <p><strong>Email:</strong> funnekhan123@gmail.com</p>
+      <p><strong>Instagram:</strong> sk_official927</p>
+      <p><strong>Made by:</strong> Samir</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="menu-dropdown" id="dropdownMenu">
+    <button id="topLoginBtn">Login with Google</button>
+    <button id="topLogoutBtn" class="hidden">Logout</button>
+    <button onclick="document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');">
+      Open Contact Info
+    </button>
+  </div>
+
+  <div class="container" id="home">
+    <div class="card">
+      <span id="modeBadge" class="mode-badge guest-mode">Guest Mode</span>
+      <h2 style="margin-bottom:8px;">Welcome</h2>
+      <p id="userInfo">Login karke user mode ya admin mode access karo.</p>
+    </div>
+
+    <div id="adminPanel" class="card hidden">
+      <h2 id="formHeading" style="margin-bottom:12px;">Create Post</h2>
+      <input type="text" id="title" placeholder="News title" />
+      <textarea id="description" placeholder="Write news description..."></textarea>
+      <select id="mediaType">
+        <option value="image">Image</option>
+        <option value="video">Video</option>
+      </select>
+      <input type="file" id="mediaFile" accept="image/*,video/*" />
+      <button class="main-btn green" id="publishBtn">Publish Post</button>
+      <button class="main-btn gray hidden" id="updateBtn">Update Post</button>
+      <button class="main-btn red hidden" id="cancelEditBtn">Cancel Edit</button>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div id="feedSection" class="feed"></div>
+    <div id="emptyBox" class="empty hidden">No posts available.</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      onSnapshot,
+      serverTimestamp,
+      doc,
+      updateDoc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKDihtEoSfV_Big7_luafxsiKmBcgiamk",
+      authDomain: "pokemon-news.firebaseapp.com",
+      projectId: "pokemon-news",
+      storageBucket: "pokemon-news.firebasestorage.app",
+      messagingSenderId: "458060320898",
+      appId: "1:458060320898:web:cc17c7566827d809fd249b",
+      measurementId: "G-TP2PC8MRHE"
+    };
+
+    const CLOUD_NAME = "du2v9s9k0";
+    const UPLOAD_PRESET = "ml_default";
+    const ADMIN_EMAIL = "funnekhan123@gmail.com";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const menuBtn = document.getElementById("menuBtn");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const threeDotBtn = document.getElementById("threeDotBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+
+    const topLoginBtn = document.getElementById("topLoginBtn");
+    const topLogoutBtn = document.getElementById("topLogoutBtn");
+    const sideLoginBtn = document.getElementById("sideLoginBtn");
+    const sideLogoutBtn = document.getElementById("sideLogoutBtn");
+
+    const modeBadge = document.getElementById("modeBadge");
+    const userInfo = document.getElementById("userInfo");
+    const adminPanel = document.getElementById("adminPanel");
+
+    const titleInput = document.getElementById("title");
+    const descriptionInput = document.getElementById("description");
+    const mediaTypeInput = document.getElementById("mediaType");
+    const mediaFileInput = document.getElementById("mediaFile");
+    const publishBtn = document.getElementById("publishBtn");
+    const updateBtn = document.getElementById("updateBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const formHeading = document.getElementById("formHeading");
+    const statusBox = document.getElementById("status");
+    const feedSection = document.getElementById("feedSection");
+    const emptyBox = document.getElementById("emptyBox");
+
+    let currentUser = null;
+    let editPostId = null;
+    let existingMediaUrl = "";
+    let existingMediaType = "image";
+
+    menuBtn.addEventListener("click", () => {
+      sidebar.classList.add("open");
+      overlay.classList.add("show");
+    });
+
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
+      dropdownMenu.classList.remove("show");
+    });
+
+    threeDotBtn.addEventListener("click", () => {
+      dropdownMenu.classList.toggle("show");
+    });
+
+    async function doLogin() {
+      try {
+        await signInWithPopup(auth, provider);
+        dropdownMenu.classList.remove("show");
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
+    }
+
+    async function doLogout() {
+      await signOut(auth);
+      dropdownMenu.classList.remove("show");
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
+    }
+
+    topLoginBtn.addEventListener("click", doLogin);
+    sideLoginBtn.addEventListener("click", doLogin);
+    topLogoutBtn.addEventListener("click", doLogout);
+    sideLogoutBtn.addEventListener("click", doLogout);
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user || null;
+      const isAdmin = user && user.email === ADMIN_EMAIL;
+
+      if (user) {
+        userInfo.textContent = `Logged in as: ${user.email}`;
+        topLoginBtn.classList.add("hidden");
+        sideLoginBtn.classList.add("hidden");
+        topLogoutBtn.classList.remove("hidden");
+        sideLogoutBtn.classList.remove("hidden");
+      } else {
+        userInfo.textContent = "Login karke user mode ya admin mode access karo.";
+        topLoginBtn.classList.remove("hidden");
+        sideLoginBtn.classList.remove("hidden");
+        topLogoutBtn.classList.add("hidden");
+        sideLogoutBtn.classList.add("hidden");
+      }
+
+      adminPanel.classList.toggle("hidden", !isAdmin);
+
+      if (isAdmin) {
+        modeBadge.textContent = "Admin Mode";
+        modeBadge.className = "mode-badge admin-mode";
+      } else if (user) {
+        modeBadge.textContent = "User Mode";
+        modeBadge.className = "mode-badge user-mode";
+      } else {
+        modeBadge.textContent = "Guest Mode";
+        modeBadge.className = "mode-badge guest-mode";
+      }
+    });
+
+    async function uploadToCloudinary(file, mediaType) {
+      const endpoint =
+        mediaType === "video"
+          ? `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`
+          : `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Cloudinary upload failed");
+      }
+
+      return data.secure_url;
+    }
+
+    function resetForm() {
+      editPostId = null;
+      existingMediaUrl = "";
+      existingMediaType = "image";
+      titleInput.value = "";
+      descriptionInput.value = "";
+      mediaTypeInput.value = "image";
+      mediaFileInput.value = "";
+      formHeading.textContent = "Create Post";
+      publishBtn.classList.remove("hidden");
+      updateBtn.classList.add("hidden");
+      cancelEditBtn.classList.add("hidden");
+      statusBox.textContent = "";
+    }
+
+    function startEdit(postId, post) {
+      editPostId = postId;
+      existingMediaUrl = post.mediaUrl || "";
+      existingMediaType = post.mediaType || "image";
+      titleInput.value = post.title || "";
+      descriptionInput.value = post.description || "";
+      mediaTypeInput.value = post.mediaType || "image";
+      formHeading.textContent = "Edit Post";
+      publishBtn.classList.add("hidden");
+      updateBtn.classList.remove("hidden");
+      cancelEditBtn.classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    publishBtn.addEventListener("click", async () => {
+      try {
+        if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+          alert("Only admin can upload posts.");
+          return;
+        }
+
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const mediaType = mediaTypeInput.value;
+        const file = mediaFileInput.files[0];
+
+        if (!title || !description || !file) {
+          alert("Title, description aur media file zaroori hai.");
+          return;
+        }
+
+        statusBox.textContent = "Uploading media...";
+        publishBtn.disabled = true;
+
+        const mediaUrl = await uploadToCloudinary(file, mediaType);
+
+        statusBox.textContent = "Saving post...";
+        await addDoc(collection(db, "posts"), {
+          title,
+          description,
+          mediaType,
+          mediaUrl,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          authorEmail: currentUser.email,
+          authorName: currentUser.displayName || "Admin"
+        });
+
+        resetForm();
+        statusBox.textContent = "Post published successfully.";
+      } catch (err) {
+        statusBox.textContent = "Error: " + err.message;
+      } finally {
+        publishBtn.disabled = false;
+      }
+    });
+
+    updateBtn.addEventListener("click", async () => {
+      try {
+        if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+          alert("Only admin can edit posts.");
+          return;
+        }
+
+        if (!editPostId) {
+          alert("No post selected for editing.");
+          return;
+        }
+
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const mediaType = mediaTypeInput.value;
+        const file = mediaFileInput.files[0];
+
+        if (!title || !description) {
+          alert("Title aur description required hai.");
+          return;
+        }
+
+        updateBtn.disabled = true;
+        statusBox.textContent = "Updating post...";
+
+        let mediaUrl = existingMediaUrl;
+        let finalMediaType = existingMediaType;
+
+        if (file) {
+          statusBox.textContent = "Uploading new media...";
+          mediaUrl = await uploadToCloudinary(file, mediaType);
+          finalMediaType = mediaType;
+        }
+
+        await updateDoc(doc(db, "posts", editPostId), {
+          title,
+          description,
+          mediaUrl,
+          mediaType: finalMediaType,
+          updatedAt: serverTimestamp()
+        });
+
+        resetForm();
+        statusBox.textContent = "Post updated successfully.";
+      } catch (err) {
+        statusBox.textContent = "Error: " + err.message;
+      } finally {
+        updateBtn.disabled = false;
+      }
+    });
+
+    cancelEditBtn.addEventListener("click", resetForm);
+
+    async function handleDelete(postId) {
+      try {
+        if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+          alert("Only admin can delete posts.");
+          return;
+        }
+
+        const ok = confirm("Delete this post?");
+        if (!ok) return;
+
+        await deleteDoc(doc(db, "posts", postId));
+        if (editPostId === postId) resetForm();
+      } catch (err) {
+        alert("Delete error: " + err.message);
+      }
+    }
+
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+
+    onSnapshot(q, (snapshot) => {
+      feedSection.innerHTML = "";
+
+      if (snapshot.empty) {
+        emptyBox.classList.remove("hidden");
+        return;
+      }
+
+      emptyBox.classList.add("hidden");
+
+      snapshot.forEach((item) => {
+        const post = item.data();
+        const postId = item.id;
+        const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+
+        const dateText = post.createdAt?.toDate
+          ? post.createdAt.toDate().toLocaleString()
+          : "Just now";
+
+        const postEl = document.createElement("div");
+        postEl.className = "post";
+
+        postEl.innerHTML = `
+          <div class="post-media">
+            ${
+              post.mediaType === "video"
+                ? `<video controls src="${post.mediaUrl}"></video>`
+                : `<img src="${post.mediaUrl}" alt="${post.title}">`
+            }
+          </div>
+          <div class="post-body">
+            <div class="post-type">${(post.mediaType || "image").toUpperCase()}</div>
+            <div class="post-title">${post.title || ""}</div>
+            <div class="post-text">${post.description || ""}</div>
+            <div class="meta">By ${post.authorName || "Admin"} • ${dateText}</div>
+            ${
+              isAdmin
+                ? `<div class="post-actions">
+                    <button class="main-btn gray edit-btn" data-id="${postId}">Edit</button>
+                    <button class="main-btn red delete-btn" data-id="${postId}">Delete</button>
+                  </div>`
+                : ``
+            }
+          </div>
+        `;
+
+        if (isAdmin) {
+          postEl.querySelector(".edit-btn").addEventListener("click", () => startEdit(postId, post));
+          postEl.querySelector(".delete-btn").addEventListener("click", () => handleDelete(postId));
+        }
+
+        feedSection.appendChild(postEl);
+      });
+    }, (error) => {
+      feedSection.innerHTML = `<div class="empty">Error loading posts: ${error.message}</div>`;
+    });
+  </script>
+</body>
+</html>
